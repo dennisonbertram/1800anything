@@ -1,0 +1,5 @@
+{"task_id": "TASK-004", "learning": "Twilio webhook signature validation requires exact URL matching including protocol/host - breaks behind reverse proxies", "category": "issue", "timestamp": "2026-03-27T00:00:00Z"}
+{"task_id": "TASK-004", "learning": "Always add state guards in processTask-style functions to prevent re-execution in wrong states", "category": "practice", "timestamp": "2026-03-27T00:00:00Z"}
+{"task_id": "TASK-004", "learning": "Payment confirmation must happen AFTER payment verification, never before - use awaiting_payment state", "category": "practice", "timestamp": "2026-03-27T00:00:00Z"}
+{"task_id": "TASK-004", "learning": "Stripe price parsing: use parseFloat + Math.round, never parseInt with regex digit stripping (breaks on decimals)", "category": "issue", "timestamp": "2026-03-27T00:00:00Z"}
+{"task_id": "TASK-004", "learning": "Junction tables (task_providers) needed for many-to-many relationships even in v1 - prevents wrong-task routing", "category": "pattern", "timestamp": "2026-03-27T00:00:00Z"}

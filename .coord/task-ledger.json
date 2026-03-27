@@ -1,0 +1,7 @@
+[
+  {"id": "TASK-001", "title": "Project scaffolding + DB schema + types", "status": "done"},
+  {"id": "TASK-002", "title": "Server + routes", "status": "done"},
+  {"id": "TASK-003", "title": "Core services implementation", "status": "done"},
+  {"id": "TASK-004", "title": "Code review + critical fixes", "status": "done"},
+  {"id": "TASK-005", "title": "Integration testing", "status": "pending"}
+]
