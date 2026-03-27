@@ -1,14 +1,26 @@
-import 'dotenv/config';
-import { Hono } from 'hono';
-import { serve } from '@hono/node-server';
-import { logger } from 'hono/logger';
-import twilioRoutes from './routes/twilio.js';
+import { serve } from "@hono/node-server";
+import { createApp } from "./app.js";
+import { config } from "./config.js";
+import { startRunner, stopRunner } from "./worker/runner.js";
+import { shutdown as shutdownDb } from "./repo/db.js";
+import { logger } from "./utils/logger.js";
 
-const app = new Hono();
-app.use('*', logger());
-app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
-app.route('/', twilioRoutes);
+const app = createApp();
 
-const port = parseInt(process.env.PORT || '3000', 10);
-console.log(`🚀 1800anything listening on port ${port}`);
-serve({ fetch: app.fetch, port });
+const server = serve({ fetch: app.fetch, port: config.PORT }, () => {
+  logger.info(`🚀 1800anything listening on port ${config.PORT}`);
+});
+
+startRunner();
+
+// Graceful shutdown
+async function gracefulShutdown(signal: string): Promise<void> {
+  logger.info(`${signal} received, shutting down...`);
+  stopRunner();
+  server.close();
+  await shutdownDb();
+  process.exit(0);
+}
+
+process.on("SIGINT", () => void gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"));
