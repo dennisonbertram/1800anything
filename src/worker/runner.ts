@@ -14,17 +14,20 @@ export function startRunner(): void {
     if (!running) return;
 
     try {
-      const task = await claimRunnableTask();
-      if (!task) return;
+      // Process all available tasks in this tick
+      while (running) {
+        const task = await claimRunnableTask();
+        if (!task) break; // No more tasks to process
 
-      logger.info(`[runner] Claimed task ${task.id} (status: ${task.status})`);
+        logger.info(`[runner] Claimed task ${task.id} (status: ${task.status})`);
 
-      try {
-        await runTask(task.id);
-      } catch (err) {
-        logger.error(`[runner] Task ${task.id} failed:`, err);
-      } finally {
-        await releaseTaskLock(task.id);
+        try {
+          await runTask(task.id);
+        } catch (err) {
+          logger.error(`[runner] Task ${task.id} failed:`, err);
+        } finally {
+          await releaseTaskLock(task.id);
+        }
       }
     } catch (err) {
       logger.error("[runner] Poll error:", err);

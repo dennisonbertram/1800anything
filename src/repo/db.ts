@@ -31,6 +31,11 @@ export async function queryOne<T extends Record<string, unknown> = Record<string
   return rows[0] ?? null;
 }
 
+export async function execute(text: string, params: unknown[] = []): Promise<{ rowCount: number }> {
+  const result = await pool.query(text, params);
+  return { rowCount: result.rowCount ?? 0 };
+}
+
 export async function shutdown(): Promise<void> {
   await pool.end();
   logger.info("Database pool closed");

@@ -39,7 +39,8 @@ export async function findOrCreateContact(phone: string, kind: ContactKind, name
   const rows = await query<ContactRow>(
     `insert into contacts (phone, kind, name)
      values ($1, $2, $3)
-     on conflict (phone) do update set phone = excluded.phone
+     on conflict (phone) do update set
+       name = coalesce(excluded.name, contacts.name)
      returning *`,
     [phone, kind, name ?? null]
   );

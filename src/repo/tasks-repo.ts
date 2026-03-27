@@ -1,6 +1,6 @@
-import { query, queryOne } from "./db.js";
+import { query, queryOne, execute } from "./db.js";
 import type { ServiceType, Task, TaskStatus } from "../domain/types.js";
-import { isValidTransition } from "../domain/task-state-machine.js";
+import { VALID_TRANSITIONS } from "../domain/task-state-machine.js";
 import { logger } from "../utils/logger.js";
 
 type TaskRow = {
@@ -65,17 +65,32 @@ export async function getTaskById(taskId: string): Promise<Task | null> {
   return row ? mapRow(row) : null;
 }
 
-export async function updateTaskStatus(taskId: string, newStatus: TaskStatus): Promise<void> {
-  // Validate transition
-  const current = await queryOne<TaskRow>("select * from tasks where id = $1", [taskId]);
-  if (current && !isValidTransition(current.status, newStatus)) {
-    logger.warn(`Invalid transition: ${current.status} -> ${newStatus} for task ${taskId}`);
+export async function updateTaskStatus(taskId: string, newStatus: TaskStatus): Promise<boolean> {
+  // Compute which states can transition TO newStatus
+  const validFromStates: string[] = [];
+  for (const [from, targets] of Object.entries(VALID_TRANSITIONS)) {
+    if ((targets as readonly string[]).includes(newStatus)) {
+      validFromStates.push(from);
+    }
   }
 
-  await query(
-    "update tasks set status = $2, updated_at = now() where id = $1",
-    [taskId, newStatus]
+  if (validFromStates.length === 0) {
+    logger.warn(`[tasks-repo] No valid source states for target: ${newStatus}`);
+    return false;
+  }
+
+  const result = await execute(
+    `update tasks set status = $2, updated_at = now()
+     where id = $1 and status = any($3::text[])`,
+    [taskId, newStatus, validFromStates]
   );
+
+  if (result.rowCount === 0) {
+    logger.warn(`[tasks-repo] Transition to '${newStatus}' failed for task ${taskId} — current status not in valid sources`);
+    return false;
+  }
+
+  return true;
 }
 
 export async function updateTaskExtraction(

@@ -63,6 +63,13 @@ export async function handleWaitingForUserSelection(task: Task): Promise<void> {
     }
   }
 
+  // Sanity cap: $10,000 maximum
+  const MAX_AMOUNT_CENTS = 1000000;
+  if (amountCents > MAX_AMOUNT_CENTS) {
+    logger.warn(`[handle-selection] Price ${amountCents} cents exceeds max, capping to ${MAX_AMOUNT_CENTS}`);
+    amountCents = MAX_AMOUNT_CENTS;
+  }
+
   const description = String(task.structuredData["description"] ?? "Home service");
 
   const paymentLink = await createPaymentLink({

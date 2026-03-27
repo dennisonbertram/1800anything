@@ -42,7 +42,22 @@ export async function handleNeedsUserClarification(task: Task): Promise<void> {
   if (!extracted.needsClarification) {
     await updateTaskStatus(task.id, "ready_to_source");
   } else {
-    // Transition back to intake so it can ask another question
-    await updateTaskStatus(task.id, "intake");
+    const attempts = (task.structuredData["clarificationAttempts"] as number) ?? 0;
+    if (attempts >= 3) {
+      logger.info(`[handle-clarification] Max attempts reached, proceeding anyway`);
+      await updateTaskStatus(task.id, "ready_to_source");
+    } else {
+      // Update attempt counter and transition back to intake so it can ask another question
+      await updateTaskExtraction(task.id, {
+        serviceType: extracted.serviceType,
+        locationText: extracted.locationText,
+        structuredData: {
+          ...task.structuredData,
+          description: extracted.description,
+          clarificationAttempts: attempts + 1,
+        },
+      });
+      await updateTaskStatus(task.id, "intake");
+    }
   }
 }

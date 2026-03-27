@@ -27,17 +27,16 @@ stripeWebhook.post("/", async (c) => {
         const sessionId = session["id"] as string;
         await markTaskPaid(taskId, sessionId);
 
-        try {
-          await updateTaskStatus(taskId, "provider_confirmed");
+        const transitioned = await updateTaskStatus(taskId, "provider_confirmed");
+        if (transitioned) {
           logger.info(`[stripe-webhook] Task ${taskId} payment confirmed`);
-        } catch (err) {
-          logger.error(`[stripe-webhook] Failed to transition task:`, err);
+          await addTaskEvent(taskId, "payment_confirmed", {
+            sessionId,
+            amount: session["amount_total"],
+          });
+        } else {
+          logger.info(`[stripe-webhook] Task ${taskId} already transitioned (duplicate webhook?)`);
         }
-
-        await addTaskEvent(taskId, "payment_confirmed", {
-          sessionId,
-          amount: session["amount_total"],
-        });
       }
     }
 
